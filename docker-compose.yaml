@@ -8,6 +8,10 @@ services:
       POSTGRES_PASSWORD: "pass"
     volumes:
       - ./schema.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./psql:/var/lib/postgresql/data
+      - db:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
+volumes:
+  db:
+    driver: local
