@@ -7,4 +7,5 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/go-chi/render v1.0.1
 	github.com/lib/pq v1.10.6
+	github.com/sethvargo/go-envconfig v0.6.2
 )
