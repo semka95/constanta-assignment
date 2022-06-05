@@ -12,6 +12,21 @@ services:
     ports:
       - "5432:5432"
 
+  backend:
+    build: .
+    container_name: payment_api
+    env_file:
+      - ./app.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
 volumes:
   db:
     driver: local
