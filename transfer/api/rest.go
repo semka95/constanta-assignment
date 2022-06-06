@@ -1,7 +1,9 @@
 package transfer
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -16,11 +18,13 @@ import (
 // API represents transfer rest api
 type API struct {
 	transferStore transferModel.Querier
+	db            *sql.DB
 }
 
 // NewRouter creates transfer api router
-func (a *API) NewRouter(transferStore transferModel.Querier) chi.Router {
+func (a *API) NewRouter(transferStore transferModel.Querier, db *sql.DB) chi.Router {
 	a.transferStore = transferStore
+	a.db = db
 
 	r := chi.NewRouter()
 	corsMiddleware := cors.New(cors.Options{
@@ -75,6 +79,22 @@ func (a *API) updateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tx, err := a.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't start transaction")
+		return
+	}
+	defer tx.Rollback()
+	status, err := a.transferStore.GetTransferStatusByID(r.Context(), int64(paymentID))
+	if errors.Is(err, sql.ErrNoRows) {
+		SendErrorJSON(w, r, http.StatusNotFound, err, "payment not found")
+		return
+	}
+	if err != nil {
+		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't update transfer")
+		return
+	}
+
 	s.ID = int64(paymentID)
 	rows, err := a.transferStore.UpdateTransferStatus(r.Context(), s)
 	if err != nil {
@@ -82,7 +102,12 @@ func (a *API) updateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if rows == 0 {
-		SendErrorJSON(w, r, http.StatusBadRequest, errors.New("hello"), "can't update payment status, it has terminal status")
+		SendErrorJSON(w, r, http.StatusBadRequest, fmt.Errorf("can't update from %s status to %s status", s.TransferStatus, status), "can't update payment status")
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't commit transaction")
 		return
 	}
 
@@ -98,8 +123,12 @@ func (a *API) getStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	trStatus, err := a.transferStore.GetTransferStatusByID(r.Context(), int64(paymentID))
+	if errors.Is(err, sql.ErrNoRows) {
+		SendErrorJSON(w, r, http.StatusNotFound, err, "payment not found")
+		return
+	}
 	if err != nil {
-		SendErrorJSON(w, r, http.StatusBadRequest, err, "can't get transfer")
+		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't get transfer")
 		return
 	}
 
@@ -130,7 +159,11 @@ func (a *API) getUserPaymentsByID(w http.ResponseWriter, r *http.Request) {
 	}
 	ts, err := a.transferStore.ListUserTransfersByID(r.Context(), params)
 	if err != nil {
-		SendErrorJSON(w, r, http.StatusBadRequest, err, "can't find transfer")
+		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't find transfer")
+		return
+	}
+	if len(ts) == 0 {
+		SendErrorJSON(w, r, http.StatusBadRequest, fmt.Errorf("no payments was found for %d user id", userID), "no payments found")
 		return
 	}
 
@@ -159,10 +192,13 @@ func (a *API) getUserPaymentsByEmail(w http.ResponseWriter, r *http.Request) {
 		ID:    int64(cursor),
 		Limit: int32(limit),
 	}
-
 	ts, err := a.transferStore.ListUserTransfersByEmail(r.Context(), params)
 	if err != nil {
-		SendErrorJSON(w, r, http.StatusBadRequest, err, "can't get transfer")
+		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't get transfer")
+		return
+	}
+	if len(ts) == 0 {
+		SendErrorJSON(w, r, http.StatusBadRequest, fmt.Errorf("no payments was found for %s email", email), "no payments found")
 		return
 	}
 
@@ -178,13 +214,35 @@ func (a *API) cancelPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tx, err := a.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't start transaction")
+		return
+	}
+	defer tx.Rollback()
+
+	status, err := a.transferStore.GetTransferStatusByID(r.Context(), int64(paymentID))
+	if errors.Is(err, sql.ErrNoRows) {
+		SendErrorJSON(w, r, http.StatusNotFound, err, "payment not found")
+		return
+	}
+	if err != nil {
+		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't update transfer")
+		return
+	}
+
 	rows, err := a.transferStore.DiscardTransfer(r.Context(), int64(paymentID))
 	if err != nil {
 		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't delete transfer")
 		return
 	}
 	if rows == 0 {
-		SendErrorJSON(w, r, http.StatusBadRequest, errors.New(""), "can't discard payment, it has terminal status")
+		SendErrorJSON(w, r, http.StatusBadRequest, fmt.Errorf("can't discard payment, it has %s status", status), "can't discard payment, it has terminal status")
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't commit transaction")
 		return
 	}
 

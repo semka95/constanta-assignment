@@ -47,7 +47,7 @@ func (s *RestServer) RunServer() {
 	// init router
 	store := transferStore.New(db)
 	api := transferAPI.API{}
-	router := api.NewRouter(store)
+	router := api.NewRouter(store, db)
 
 	// init http server
 	srv := &http.Server{
