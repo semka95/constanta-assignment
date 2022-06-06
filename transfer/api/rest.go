@@ -29,18 +29,19 @@ func (a *API) NewRouter(transferStore transferModel.Querier) chi.Router {
 		AllowedHeaders: []string{"Accept", "Content-Type"},
 	})
 	r.Use(middleware.Recoverer, corsMiddleware.Handler)
-
-	r.Post("/payment/create", a.createPayment)
-	r.Put("/payment/{id}", a.updateStatus)
-	r.Get("/payment/{id}", a.getStatus)
-	r.Delete("/payment/{id}", a.cancelPayment)
-	r.Get("/user/{id}/payments", a.getUserPaymentsByID)
-	r.Get("/user/payments", a.getUserPaymentsByEmail)
+	r.Route("/api/v1", func(rapi chi.Router) {
+		rapi.Post("/payment", a.createPayment)
+		rapi.Put("/payment/{id}", a.updateStatus)
+		rapi.Get("/payment/{id}", a.getStatus)
+		rapi.Delete("/payment/{id}", a.cancelPayment)
+		rapi.Get("/user/{id}/payment", a.getUserPaymentsByID)
+		rapi.Get("/user/payment", a.getUserPaymentsByEmail)
+	})
 
 	return r
 }
 
-// POST /payment/create - creates new payment
+// POST /payment- creates new payment
 func (a *API) createPayment(w http.ResponseWriter, r *http.Request) {
 	createTransfer := transferModel.CreateTransferParams{}
 
@@ -106,7 +107,7 @@ func (a *API) getStatus(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, JSON{"status": trStatus})
 }
 
-// GET /user/{id}/payments?id=userID&limit=5&cursor=0 - returns payments by user id
+// GET /user/{id}/payment?limit=5&cursor=0 - returns payments by user id
 func (a *API) getUserPaymentsByID(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -137,7 +138,7 @@ func (a *API) getUserPaymentsByID(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, ts)
 }
 
-// GET /user/payments?email=userEmail&limit=5&cursor=0 - returns payments by user email
+// GET /user/payment?email=userEmail&limit=5&cursor=0 - returns payments by user email
 func (a *API) getUserPaymentsByEmail(w http.ResponseWriter, r *http.Request) {
 	email := r.URL.Query().Get("email")
 	if email == "" {
