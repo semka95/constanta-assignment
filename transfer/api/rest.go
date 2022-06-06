@@ -114,11 +114,11 @@ func (a *API) getUserPaymentsByID(w http.ResponseWriter, r *http.Request) {
 		SendErrorJSON(w, r, http.StatusBadRequest, err, "invalid payment id")
 		return
 	}
-	limit, err := strconv.Atoi(chi.URLParam(r, "limit"))
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
 		limit = 10
 	}
-	cursor, err := strconv.Atoi(chi.URLParam(r, "cursor"))
+	cursor, err := strconv.Atoi(r.URL.Query().Get("cursor"))
 	if err != nil {
 		cursor = 0
 	}
@@ -145,11 +145,11 @@ func (a *API) getUserPaymentsByEmail(w http.ResponseWriter, r *http.Request) {
 		SendErrorJSON(w, r, http.StatusBadRequest, errors.New(""), "invalid email")
 		return
 	}
-	limit, err := strconv.Atoi(chi.URLParam(r, "limit"))
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
 		limit = 10
 	}
-	cursor, err := strconv.Atoi(chi.URLParam(r, "cursor"))
+	cursor, err := strconv.Atoi(r.URL.Query().Get("cursor"))
 	if err != nil {
 		cursor = 0
 	}
