@@ -175,7 +175,7 @@ func (a *API) getUserPaymentsByID(w http.ResponseWriter, r *http.Request) {
 func (a *API) getUserPaymentsByEmail(w http.ResponseWriter, r *http.Request) {
 	email := r.URL.Query().Get("email")
 	if email == "" {
-		SendErrorJSON(w, r, http.StatusBadRequest, errors.New(""), "invalid email")
+		SendErrorJSON(w, r, http.StatusBadRequest, errors.New("no email provided"), "invalid email")
 		return
 	}
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -194,7 +194,7 @@ func (a *API) getUserPaymentsByEmail(w http.ResponseWriter, r *http.Request) {
 	}
 	ts, err := a.transferStore.ListUserTransfersByEmail(r.Context(), params)
 	if err != nil {
-		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't get transfer")
+		SendErrorJSON(w, r, http.StatusInternalServerError, err, "can't find transfer")
 		return
 	}
 	if len(ts) == 0 {
