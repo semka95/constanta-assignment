@@ -28,6 +28,9 @@ lint:
 	golangci-lint run 
 
 mock:
-	moq -out ./transfer/repository/mock.go ./transfer/repository Querier
+	moq -out ./payment/repository/mock.go ./payment/repository Querier
 
-.PHONY: test engine unittest test-coverage clean docker run stop lint mock
+sqlc:
+	sqlc generate
+
+.PHONY: test engine unittest test-coverage clean docker run stop lint mock sqlc
