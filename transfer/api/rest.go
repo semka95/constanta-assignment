@@ -38,7 +38,7 @@ func (a *API) NewRouter(transferStore transferModel.Querier, db *sql.DB) chi.Rou
 		rapi.Put("/payment/{id}", a.updateStatus)
 		rapi.Get("/payment/{id}", a.getStatus)
 		rapi.Delete("/payment/{id}", a.cancelPayment)
-		rapi.Get("/user/{id}/payment", a.getUserPaymentsByID)
+		rapi.Get("/user/{user_id}/payment", a.getUserPaymentsByID)
 		rapi.Get("/user/payment", a.getUserPaymentsByEmail)
 	})
 
@@ -138,9 +138,9 @@ func (a *API) getStatus(w http.ResponseWriter, r *http.Request) {
 
 // GET /user/{id}/payment?limit=5&cursor=0 - returns payments by user id
 func (a *API) getUserPaymentsByID(w http.ResponseWriter, r *http.Request) {
-	userID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	userID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
 	if err != nil {
-		SendErrorJSON(w, r, http.StatusBadRequest, err, "invalid payment id")
+		SendErrorJSON(w, r, http.StatusBadRequest, err, "invalid user id")
 		return
 	}
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
