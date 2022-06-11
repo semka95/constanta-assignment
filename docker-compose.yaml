@@ -25,6 +25,16 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v4.12.0
+    container_name: "swagger-ui"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./swagger:/usr/share/nginx/html/swagger
+    environment:
+      API_URL: swagger/openapi.yaml
+
 volumes:
   db:
     driver: local

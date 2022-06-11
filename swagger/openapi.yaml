@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: Payment Service Api
+  version: 0.0.1
+  summary: Payment Service Api
+  description: Payment Service Api
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+servers:
+  - url: "http://127.0.0.1:8080/api/v1"
+paths:
+  /payment:
+    parameters: []
+    post:
+      summary: Create New Payment
+      operationId: post-payment
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+              examples:
+                success:
+                  value:
+                    id: 1
+                    user_id: 2
+                    email: user@example.com
+                    amount: 123.45
+                    currency: usd
+                    created_at: "2019-08-24T14:15:22Z"
+                    updated_at: "2019-08-24T14:15:22Z"
+                    payment_status: new
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalid request body:
+                  value:
+                    error: "invalid request body, can't decode it to payment"
+                    details: invalid character 'b' looking for beginning of value
+      description: create payment
+      parameters: []
+      requestBody:
+        $ref: "#/components/requestBodies/CreatePayment"
+  "/payment/{payment_id}":
+    parameters:
+      - $ref: "#/components/parameters/payment_id"
+    get:
+      summary: Get Payment Status
+      responses:
+        "200":
+          $ref: "#/components/responses/PaymentStatus"
+      operationId: get-payment-payment_id
+      description: get payment status
+    put:
+      summary: Update Payment Status
+      operationId: put-payment-payment_id
+      responses:
+        "200":
+          description: OK
+      description: update payment status
+      requestBody:
+        $ref: "#/components/requestBodies/UpdatePayment"
+    delete:
+      summary: Discard Payment
+      operationId: delete-payment-payment_id
+      responses:
+        "200":
+          description: OK
+      description: discard payment
+  "/user/{user_id}/payment":
+    parameters:
+      - $ref: "#/components/parameters/user_id"
+    get:
+      summary: List User's Payments By ID
+      responses:
+        "200":
+          $ref: "#/components/responses/PaymentList"
+      operationId: get-user-user_id-payment
+      description: list all user payments
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+  /user/payment:
+    get:
+      summary: List User's Payments By Email
+      responses:
+        "200":
+          $ref: "#/components/responses/PaymentList"
+      operationId: get-user-payment
+      description: list user's payments by email
+      parameters:
+        - $ref: "#/components/parameters/email"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/cursor"
+components:
+  schemas:
+    Payment:
+      title: Payment
+      type: object
+      description: Payment model
+      examples:
+        - id: 1
+          user_id: 2
+          email: user@example.com
+          amount: 123.45
+          currency: usd
+          created_at: "2019-08-24T14:15:22Z"
+          updated_at: "2019-08-24T14:15:22Z"
+          payment_status: new
+      properties:
+        id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        amount:
+          type: number
+          format: money
+        currency:
+          $ref: "#/components/schemas/PaymentCurrency"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        payment_status:
+          $ref: "#/components/schemas/PaymentStatus"
+    PaymentStatus:
+      type: string
+      title: Payment Status
+      enum:
+        - new
+        - success
+        - failure
+        - error
+      description: available payment status
+    PaymentCurrency:
+      type: string
+      title: Payment Currency
+      enum:
+        - eur
+        - rub
+        - usd
+      description: available currency
+    Error:
+      title: Error
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+      description: error response
+  requestBodies:
+    CreatePayment:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              user_id:
+                type: integer
+                format: int64
+              email:
+                type: string
+                format: email
+              amount:
+                type: number
+                format: money
+              currency:
+                $ref: "#/components/schemas/PaymentCurrency"
+          examples:
+            example-1:
+              value:
+                user_id: 2
+                email: user@example.com
+                amount: 123.45
+                currency: usd
+      description: Create Payment parameters
+    UpdatePayment:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              payment_status:
+                $ref: "#/components/schemas/PaymentStatus"
+          examples:
+            example-1:
+              value:
+                id: 2
+                payment_status: success
+  parameters:
+    payment_id:
+      name: payment_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: payment id
+    user_id:
+      name: user_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: user id
+    limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int64
+        default: 10
+      description: limit number of items
+    cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int64
+        default: 0
+      description: offset id
+    email:
+      name: email
+      in: query
+      required: false
+      schema:
+        type: string
+        format: email
+      description: user email
+  responses:
+    PaymentStatus:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                $ref: "#/components/schemas/PaymentStatus"
+          examples:
+            example-1:
+              value:
+                status: new
+    PaymentList:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Payment"
+          examples:
+            example-1:
+              value:
+                - id: 1
+                  user_id: 2
+                  email: user@example.com
+                  amount: 123.45
+                  currency: eur
+                  created_at: "2022-06-05T09:19:10.507135Z"
+                  updated_at: "2022-06-05T09:19:10.507135Z"
+                  payment_status: new
+                - id: 2
+                  user_id: 2
+                  email: user@example.com
+                  amount: 1234.45
+                  currency: usd
+                  created_at: "2022-06-05T09:19:22.016565Z"
+                  updated_at: "2022-06-05T09:21:08.516358Z"
+                  payment_status: error
+                - id: 3
+                  user_id: 2
+                  email: user@example.com
+                  amount: 123113.45
+                  currency: rub
+                  created_at: "2022-06-05T09:21:08.516358Z"
+                  updated_at: "2022-06-05T10:22:02.516358Z"
+                  payment_status: failure
