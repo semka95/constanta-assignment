@@ -24,17 +24,10 @@ run:
 stop:
 	docker-compose down
 
-lint-prepare:
-	@echo "Installing golangci-lint" 
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s latest
-
 lint:
-	./bin/golangci-lint run \
-		--exclude-use-default=false \
-		--enable=revive \
-		--enable=gocyclo \
-		--enable=goconst \
-		--enable=unconvert \
-		./...
+	golangci-lint run 
 
-.PHONY: test engine unittest test-coverage clean docker run stop lint-prepare lint
+mock:
+	moq -out ./transfer/repository/mock.go ./transfer/repository Querier
+
+.PHONY: test engine unittest test-coverage clean docker run stop lint mock
