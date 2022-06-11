@@ -1,7 +1,9 @@
 package main
 
 import (
+	"math/rand"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
@@ -17,8 +19,7 @@ func main() {
 	defer logger.Sync()
 	zap.ReplaceGlobals(logger)
 
-	// rand.Seed(time.Now().UnixNano())
-	// fmt.Println(rand.Float64())
+	rand.Seed(time.Now().UnixNano())
 
 	config, err := cmd.NewConfig()
 	if err != nil {

@@ -1,8 +1,8 @@
 -- name: CreatePayment :one
 INSERT INTO payments(
-    user_id, email, amount, currency
+    user_id, email, amount, currency, payment_status
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5
 )
 RETURNING *;
 

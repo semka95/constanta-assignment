@@ -13,18 +13,19 @@ import (
 
 const createPayment = `-- name: CreatePayment :one
 INSERT INTO payments(
-    user_id, email, amount, currency
+    user_id, email, amount, currency, payment_status
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5
 )
 RETURNING id, user_id, email, amount, currency, payment_status, created_at, updated_at
 `
 
 type CreatePaymentParams struct {
-	UserID   int64           `json:"user_id"`
-	Email    string          `json:"email"`
-	Amount   decimal.Decimal `json:"amount"`
-	Currency ValidCurrency   `json:"currency"`
+	UserID        int64           `json:"user_id"`
+	Email         string          `json:"email"`
+	Amount        decimal.Decimal `json:"amount"`
+	Currency      ValidCurrency   `json:"currency"`
+	PaymentStatus ValidStatus     `json:"payment_status"`
 }
 
 func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error) {
@@ -33,6 +34,7 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (P
 		arg.Email,
 		arg.Amount,
 		arg.Currency,
+		arg.PaymentStatus,
 	)
 	var i Payment
 	err := row.Scan(

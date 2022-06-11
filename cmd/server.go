@@ -47,7 +47,7 @@ func (s *RestServer) RunServer() {
 	// init router
 	store := paymentStore.New(db)
 	api := paymentAPI.API{}
-	router := api.NewRouter(store, db)
+	router := api.NewRouter(store, db, s.config.ErrorChance)
 
 	// init http server
 	srv := &http.Server{

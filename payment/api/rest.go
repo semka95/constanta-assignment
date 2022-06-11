@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -19,12 +20,14 @@ import (
 type API struct {
 	paymentStore paymentModel.Querier
 	db           *sql.DB
+	errorChance  float64
 }
 
 // NewRouter creates payment api router
-func (a *API) NewRouter(paymentStore paymentModel.Querier, db *sql.DB) chi.Router {
+func (a *API) NewRouter(paymentStore paymentModel.Querier, db *sql.DB, errorChance float64) chi.Router {
 	a.paymentStore = paymentStore
 	a.db = db
+	a.errorChance = errorChance
 
 	r := chi.NewRouter()
 	corsMiddleware := cors.New(cors.Options{
@@ -52,6 +55,11 @@ func (a *API) createPayment(w http.ResponseWriter, r *http.Request) {
 	if err := render.DecodeJSON(r.Body, &createPayment); err != nil {
 		SendErrorJSON(w, r, http.StatusBadRequest, err, "invalid request body, can't decode it to payment")
 		return
+	}
+
+	createPayment.PaymentStatus = paymentModel.ValidStatusNew
+	if 1-rand.Float64() <= a.errorChance {
+		createPayment.PaymentStatus = paymentModel.ValidStatusError
 	}
 
 	payment, err := a.paymentStore.CreatePayment(r.Context(), createPayment)
