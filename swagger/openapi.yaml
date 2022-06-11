@@ -67,6 +67,8 @@ paths:
       description: update payment status
       requestBody:
         $ref: "#/components/requestBodies/UpdatePayment"
+      security:
+        - UpdateAuth: []
     delete:
       summary: Discard Payment
       operationId: delete-payment-payment_id
@@ -200,7 +202,6 @@ components:
           examples:
             example-1:
               value:
-                id: 2
                 payment_status: success
   parameters:
     payment_id:
@@ -294,3 +295,8 @@ components:
                   created_at: "2022-06-05T09:21:08.516358Z"
                   updated_at: "2022-06-05T10:22:02.516358Z"
                   payment_status: failure
+  securitySchemes:
+    UpdateAuth:
+      type: http
+      scheme: basic
+      description: ""

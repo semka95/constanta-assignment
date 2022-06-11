@@ -21,13 +21,15 @@ type API struct {
 	paymentStore paymentModel.Querier
 	db           *sql.DB
 	errorChance  float64
+	creds        map[string]string
 }
 
 // NewRouter creates payment api router
-func (a *API) NewRouter(paymentStore paymentModel.Querier, db *sql.DB, errorChance float64) chi.Router {
+func (a *API) NewRouter(paymentStore paymentModel.Querier, db *sql.DB, errorChance float64, creds map[string]string) chi.Router {
 	a.paymentStore = paymentStore
 	a.db = db
 	a.errorChance = errorChance
+	a.creds = creds
 
 	r := chi.NewRouter()
 	corsMiddleware := cors.New(cors.Options{
@@ -36,9 +38,13 @@ func (a *API) NewRouter(paymentStore paymentModel.Querier, db *sql.DB, errorChan
 		AllowedHeaders: []string{"Accept", "Content-Type"},
 	})
 	r.Use(middleware.Recoverer, corsMiddleware.Handler)
+
 	r.Route("/api/v1", func(rapi chi.Router) {
 		rapi.Post("/payment", a.createPayment)
-		rapi.Put("/payment/{id}", a.updateStatus)
+		rapi.Route("/payment/{id}", func(ru chi.Router) {
+			ru.Use(middleware.BasicAuth("update", a.creds))
+			ru.Put("/", a.updateStatus)
+		})
 		rapi.Get("/payment/{id}", a.getStatus)
 		rapi.Delete("/payment/{id}", a.cancelPayment)
 		rapi.Get("/user/{user_id}/payment", a.getUserPaymentsByID)

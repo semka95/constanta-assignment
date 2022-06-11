@@ -15,6 +15,8 @@ type Config struct {
 	IdleTimeout       int     `env:"IDLE_TIMEOUT,default=30"`
 	ShutdownTimeout   int     `env:"SHUTDOWN_TIMEOUT,default=10"`
 	ErrorChance       float64 `env:"ERROR_CHANCE,default=0.1"`
+	UpdateUser        string  `env:"UPDATE_USER,default=admin"`
+	UpdatePass        string  `env:"UPDATE_PASS,default=pass"`
 }
 
 // NewConfig reads config from env and creates config struct
