@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Payment Service Api
-  version: 0.0.1
+  version: 0.0.2
   summary: Payment Service Api
   description: Payment Service Api
   license:
@@ -44,6 +44,17 @@ paths:
                   value:
                     error: "invalid request body, can't decode it to payment"
                     details: invalid character 'b' looking for beginning of value
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                can't create payment:
+                  value:
+                    error: can't create record
+                    details: can't create payment record
       description: create payment
       parameters: []
       requestBody:
@@ -56,6 +67,39 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/PaymentStatus"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                bad id:
+                  value:
+                    error: invalid payment id
+                    details: 'strconv.Atoi: parsing "bad id": invalid syntax'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                payment not found:
+                  value:
+                    error: "sql: no rows in result set"
+                    details: payment not found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                server error:
+                  value:
+                    error: server error
+                    details: can't get payment
       operationId: get-payment-payment_id
       description: get payment status
     put:
@@ -64,6 +108,59 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                bad payment id:
+                  value:
+                    error: 'strconv.Atoi: parsing "bad id": invalid syntax'
+                    details: invalid payment id
+                invalid body:
+                  value:
+                    error: invalid character 'b' looking for beginning of value
+                    details: "invalid request body, can't decode it to payment"
+                payment in terminal status:
+                  value:
+                    error: can't update from success status to failure status
+                    details: can't update payment status
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                payment not found:
+                  value:
+                    error: "sql: no rows in result set"
+                    details: payment not found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                begin transaction server error:
+                  value:
+                    error: can't begin transaction
+                    details: can't start transaction
+                get status server error:
+                  value:
+                    error: server error
+                    details: can't update payment
+                update payment server error:
+                  value:
+                    error: server error
+                    details: can't update payment
+                commit transaction error:
+                  value:
+                    error: can't commit transaction
+                    details: can't commit payment
       description: update payment status
       requestBody:
         $ref: "#/components/requestBodies/UpdatePayment"
@@ -75,6 +172,55 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                bad payment id:
+                  value:
+                    error: invalid payment id
+                    details: 'strconv.Atoi: parsing "bad id": invalid syntax'
+                payment in terminal status:
+                  value:
+                    error: "can't discard payment, it has success status"
+                    details: "can't discard payment, it has terminal status"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                payment not found:
+                  value:
+                    error: "sql: no rows in result set"
+                    details: payment not found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                begin transaction error:
+                  value:
+                    error: can't begin transaction
+                    details: can't start transaction
+                get status server error:
+                  value:
+                    error: server error
+                    details: can't update payment
+                delete payment server error:
+                  value:
+                    error: server error
+                    details: can't delete payment
+                commit transaction error:
+                  value:
+                    error: can't commit transaction
+                    details: can't commit transaction
       description: discard payment
   "/user/{user_id}/payment":
     parameters:
@@ -84,6 +230,39 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/PaymentList"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                bad user id:
+                  value:
+                    error: invalid user id
+                    details: 'strconv.Atoi: parsing "bad id": invalid syntax'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                payment not found:
+                  value:
+                    error: no payments was found for 2 user id
+                    details: no payments found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                server error:
+                  value:
+                    error: server error
+                    details: can't find payment
       operationId: get-user-user_id-payment
       description: list all user payments
       parameters:
@@ -95,6 +274,32 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/PaymentList"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                empty email:
+                  value:
+                    error: no email provided
+                    details: invalid email
+                payment not found:
+                  value:
+                    error: no payments was found for test@example.com email
+                    details: no payments found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                server error:
+                  value:
+                    error: server error
+                    details: can't find payment
       operationId: get-user-payment
       description: list user's payments by email
       parameters:
@@ -257,7 +462,7 @@ components:
               status:
                 $ref: "#/components/schemas/PaymentStatus"
           examples:
-            example-1:
+            success:
               value:
                 status: new
     PaymentList:
