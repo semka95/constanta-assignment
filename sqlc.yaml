@@ -1,12 +1,12 @@
 version: 1
 packages:
-  - path: "./transfer/repository/"
-    name: "postgres"
+  - path: "./payment/repository/"
+    name: "repository"
     engine: "postgresql"
     schema: "./schema.sql"
-    queries: "./transfer/repository/queries.sql"
+    queries: "./payment/repository/queries.sql"
     emit_json_tags: true
     emit_interface: true
 overrides:
-  - column: "transfers.amount"
+  - column: "payments.amount"
     go_type: "github.com/shopspring/decimal.Decimal"

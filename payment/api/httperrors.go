@@ -1,4 +1,4 @@
-package transfer
+package api
 
 import (
 	"net/http"

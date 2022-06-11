@@ -6,7 +6,7 @@ import (
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 
-	"payment-service/cmd"
+	"github.com/semka95/payment-service/cmd"
 )
 
 func main() {

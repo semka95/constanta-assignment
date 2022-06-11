@@ -1,4 +1,4 @@
-module payment-service
+module github.com/semka95/payment-service
 
 go 1.18
 

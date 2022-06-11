@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.13.0
 
-package postgres
+package repository
 
 import (
 	"fmt"
@@ -52,13 +52,13 @@ func (e *ValidStatus) Scan(src interface{}) error {
 	return nil
 }
 
-type Transfer struct {
-	ID             int64           `json:"id"`
-	UserID         int64           `json:"user_id"`
-	Email          string          `json:"email"`
-	Amount         decimal.Decimal `json:"amount"`
-	Currency       ValidCurrency   `json:"currency"`
-	CreatedAt      time.Time       `json:"created_at"`
-	UpdatedAt      time.Time       `json:"updated_at"`
-	TransferStatus ValidStatus     `json:"transfer_status"`
+type Payment struct {
+	ID            int64           `json:"id"`
+	UserID        int64           `json:"user_id"`
+	Email         string          `json:"email"`
+	Amount        decimal.Decimal `json:"amount"`
+	Currency      ValidCurrency   `json:"currency"`
+	PaymentStatus ValidStatus     `json:"payment_status"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
 }

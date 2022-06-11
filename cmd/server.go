@@ -11,8 +11,8 @@ import (
 
 	"go.uber.org/zap"
 
-	transferAPI "payment-service/transfer/api"
-	transferStore "payment-service/transfer/repository"
+	paymentAPI "github.com/semka95/payment-service/payment/api"
+	paymentStore "github.com/semka95/payment-service/payment/repository"
 )
 
 // RestServer represents rest server
@@ -45,8 +45,8 @@ func (s *RestServer) RunServer() {
 	}
 
 	// init router
-	store := transferStore.New(db)
-	api := transferAPI.API{}
+	store := paymentStore.New(db)
+	api := paymentAPI.API{}
 	router := api.NewRouter(store, db)
 
 	// init http server

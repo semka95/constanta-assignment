@@ -1,4 +1,4 @@
-package transfer
+package api
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	postgres "payment-service/transfer/repository"
+	postgres "github.com/semka95/payment-service/payment/repository"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi/v5"
@@ -20,60 +20,60 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var tCreateTransfer = postgres.CreateTransferParams{
+var tCreatePayment = postgres.CreatePaymentParams{
 	UserID:   1,
 	Email:    "test@example.com",
 	Amount:   decimal.NewFromFloat(123.42),
 	Currency: "usd",
 }
 
-var tTransfer = postgres.Transfer{
-	ID:             1,
-	UserID:         1,
-	Email:          "test@example.com",
-	Amount:         decimal.NewFromFloat(123.42),
-	Currency:       "usd",
-	CreatedAt:      time.Now().Truncate(time.Millisecond).UTC(),
-	UpdatedAt:      time.Now().Truncate(time.Millisecond).UTC(),
-	TransferStatus: postgres.ValidStatusNew,
+var tPayment = postgres.Payment{
+	ID:            1,
+	UserID:        1,
+	Email:         "test@example.com",
+	Amount:        decimal.NewFromFloat(123.42),
+	Currency:      "usd",
+	CreatedAt:     time.Now().Truncate(time.Millisecond).UTC(),
+	UpdatedAt:     time.Now().Truncate(time.Millisecond).UTC(),
+	PaymentStatus: postgres.ValidStatusNew,
 }
 
-var tTransfers = []postgres.Transfer{
+var tPayments = []postgres.Payment{
 	{
-		ID:             1,
-		UserID:         2,
-		Email:          "test@example.com",
-		Amount:         decimal.NewFromFloat(123.42),
-		Currency:       "usd",
-		CreatedAt:      time.Now().Truncate(time.Millisecond).UTC(),
-		UpdatedAt:      time.Now().Truncate(time.Millisecond).UTC(),
-		TransferStatus: postgres.ValidStatusNew,
+		ID:            1,
+		UserID:        2,
+		Email:         "test@example.com",
+		Amount:        decimal.NewFromFloat(123.42),
+		Currency:      "usd",
+		CreatedAt:     time.Now().Truncate(time.Millisecond).UTC(),
+		UpdatedAt:     time.Now().Truncate(time.Millisecond).UTC(),
+		PaymentStatus: postgres.ValidStatusNew,
 	},
 	{
-		ID:             2,
-		UserID:         2,
-		Email:          "test@example.com",
-		Amount:         decimal.NewFromFloat(12223.42),
-		Currency:       "eur",
-		CreatedAt:      time.Now().Truncate(time.Millisecond).UTC(),
-		UpdatedAt:      time.Now().Truncate(time.Millisecond).UTC(),
-		TransferStatus: postgres.ValidStatusNew,
+		ID:            2,
+		UserID:        2,
+		Email:         "test@example.com",
+		Amount:        decimal.NewFromFloat(12223.42),
+		Currency:      "eur",
+		CreatedAt:     time.Now().Truncate(time.Millisecond).UTC(),
+		UpdatedAt:     time.Now().Truncate(time.Millisecond).UTC(),
+		PaymentStatus: postgres.ValidStatusNew,
 	},
 	{
-		ID:             3,
-		UserID:         2,
-		Email:          "test@example.com",
-		Amount:         decimal.NewFromFloat(123.423),
-		Currency:       "rub",
-		CreatedAt:      time.Now().Truncate(time.Millisecond).UTC(),
-		UpdatedAt:      time.Now().Truncate(time.Millisecond).UTC(),
-		TransferStatus: postgres.ValidStatusNew,
+		ID:            3,
+		UserID:        2,
+		Email:         "test@example.com",
+		Amount:        decimal.NewFromFloat(123.423),
+		Currency:      "rub",
+		CreatedAt:     time.Now().Truncate(time.Millisecond).UTC(),
+		UpdatedAt:     time.Now().Truncate(time.Millisecond).UTC(),
+		PaymentStatus: postgres.ValidStatusNew,
 	},
 }
 
-var tUpdate = postgres.UpdateTransferStatusParams{
-	ID:             2,
-	TransferStatus: "success",
+var tUpdate = postgres.UpdatePaymentStatusParams{
+	ID:            2,
+	PaymentStatus: "success",
 }
 
 type jsonError struct {
@@ -84,7 +84,7 @@ type jsonError struct {
 func TestCreatePayment(t *testing.T) {
 	api := API{}
 	req := new(http.Request)
-	reqB, err := json.Marshal(tCreateTransfer)
+	reqB, err := json.Marshal(tCreatePayment)
 	require.NoError(t, err)
 
 	cases := []struct {
@@ -97,30 +97,30 @@ func TestCreatePayment(t *testing.T) {
 		{
 			description: "success",
 			mockedStore: &postgres.QuerierMock{
-				CreateTransferFunc: func(ctx context.Context, arg postgres.CreateTransferParams) (postgres.Transfer, error) {
-					tr := postgres.Transfer{
-						ID:             1,
-						UserID:         arg.UserID,
-						Email:          arg.Email,
-						Amount:         arg.Amount,
-						Currency:       arg.Currency,
-						CreatedAt:      tTransfer.CreatedAt,
-						UpdatedAt:      tTransfer.UpdatedAt,
-						TransferStatus: postgres.ValidStatusNew,
+				CreatePaymentFunc: func(ctx context.Context, arg postgres.CreatePaymentParams) (postgres.Payment, error) {
+					tr := postgres.Payment{
+						ID:            1,
+						UserID:        arg.UserID,
+						Email:         arg.Email,
+						Amount:        arg.Amount,
+						Currency:      arg.Currency,
+						CreatedAt:     tPayment.CreatedAt,
+						UpdatedAt:     tPayment.UpdatedAt,
+						PaymentStatus: postgres.ValidStatusNew,
 					}
 					return tr, nil
 				},
 			},
 			reqBody: bytes.NewBuffer(reqB),
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.CreateTransferCalls())
+				calls := len(tr.CreatePaymentCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
-				result := postgres.Transfer{}
+				result := postgres.Payment{}
 				err = json.NewDecoder(rec.Body).Decode(&result)
 				require.NoError(t, err)
-				assert.EqualValues(t, tTransfer, result)
+				assert.EqualValues(t, tPayment, result)
 				assert.Equal(t, http.StatusCreated, rec.Code)
 			},
 		},
@@ -133,7 +133,7 @@ func TestCreatePayment(t *testing.T) {
 				jsonErr := new(jsonError)
 				err = json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "invalid request body, can't decode it to transfer", jsonErr.Details)
+				assert.Equal(t, "invalid request body, can't decode it to payment", jsonErr.Details)
 				assert.Equal(t, "invalid character 'b' looking for beginning of value", jsonErr.Error)
 				assert.Equal(t, http.StatusBadRequest, rec.Code)
 			},
@@ -141,20 +141,20 @@ func TestCreatePayment(t *testing.T) {
 		{
 			description: "repository server error",
 			mockedStore: &postgres.QuerierMock{
-				CreateTransferFunc: func(ctx context.Context, arg postgres.CreateTransferParams) (postgres.Transfer, error) {
-					return postgres.Transfer{}, fmt.Errorf("can't create record")
+				CreatePaymentFunc: func(ctx context.Context, arg postgres.CreatePaymentParams) (postgres.Payment, error) {
+					return postgres.Payment{}, fmt.Errorf("can't create record")
 				},
 			},
 			reqBody: bytes.NewBuffer(reqB),
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.CreateTransferCalls())
+				calls := len(tr.CreatePaymentCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
 				jsonErr := new(jsonError)
 				err = json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "can't create transfer record", jsonErr.Details)
+				assert.Equal(t, "can't create payment record", jsonErr.Details)
 				assert.Equal(t, "can't create record", jsonErr.Error)
 				assert.Equal(t, http.StatusInternalServerError, rec.Code)
 			},
@@ -163,7 +163,7 @@ func TestCreatePayment(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.description, func(t *testing.T) {
-			api.transferStore = tc.mockedStore
+			api.paymentStore = tc.mockedStore
 
 			req = httptest.NewRequest("POST", "/payment", tc.reqBody)
 			req.Header.Set("Content-Type", "application/json")
@@ -193,13 +193,13 @@ func TestGetStatus(t *testing.T) {
 		{
 			description: "success",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusNew, nil
 				},
 			},
 			id: "2",
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
@@ -215,7 +215,7 @@ func TestGetStatus(t *testing.T) {
 		{
 			description: "bad id",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusNew, nil
 				},
 			},
@@ -233,13 +233,13 @@ func TestGetStatus(t *testing.T) {
 		{
 			description: "not found",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return "", sql.ErrNoRows
 				},
 			},
 			id: "2",
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
@@ -254,20 +254,20 @@ func TestGetStatus(t *testing.T) {
 		{
 			description: "repository server error",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return "", fmt.Errorf("server error")
 				},
 			},
 			id: "2",
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
 				jsonErr := new(jsonError)
 				err := json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "can't get transfer", jsonErr.Details)
+				assert.Equal(t, "can't get payment", jsonErr.Details)
 				assert.Equal(t, "server error", jsonErr.Error)
 				assert.Equal(t, http.StatusInternalServerError, rec.Code)
 			},
@@ -276,7 +276,7 @@ func TestGetStatus(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.description, func(t *testing.T) {
-			api.transferStore = tc.mockedStore
+			api.paymentStore = tc.mockedStore
 
 			req = httptest.NewRequest("GET", "/payment/{id}", http.NoBody)
 			req.Header.Set("Content-Type", "application/json")
@@ -310,20 +310,20 @@ func TestGetUserPaymentsByID(t *testing.T) {
 		{
 			description: "success",
 			mockedStore: &postgres.QuerierMock{
-				ListUserTransfersByIDFunc: func(ctx context.Context, arg postgres.ListUserTransfersByIDParams) ([]postgres.Transfer, error) {
-					return tTransfers, nil
+				ListUserPaymentsByIDFunc: func(ctx context.Context, arg postgres.ListUserPaymentsByIDParams) ([]postgres.Payment, error) {
+					return tPayments, nil
 				},
 			},
 			userID: "2",
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.ListUserTransfersByIDCalls())
+				calls := len(tr.ListUserPaymentsByIDCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
-				result := make([]postgres.Transfer, 0)
+				result := make([]postgres.Payment, 0)
 				err := json.NewDecoder(rec.Body).Decode(&result)
 				require.NoError(t, err)
-				assert.ElementsMatch(t, tTransfers, result)
+				assert.ElementsMatch(t, tPayments, result)
 				assert.Equal(t, http.StatusOK, rec.Code)
 			},
 		},
@@ -344,13 +344,13 @@ func TestGetUserPaymentsByID(t *testing.T) {
 		{
 			description: "not found",
 			mockedStore: &postgres.QuerierMock{
-				ListUserTransfersByIDFunc: func(ctx context.Context, arg postgres.ListUserTransfersByIDParams) ([]postgres.Transfer, error) {
-					return []postgres.Transfer{}, nil
+				ListUserPaymentsByIDFunc: func(ctx context.Context, arg postgres.ListUserPaymentsByIDParams) ([]postgres.Payment, error) {
+					return []postgres.Payment{}, nil
 				},
 			},
 			userID: "2",
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.ListUserTransfersByIDCalls())
+				calls := len(tr.ListUserPaymentsByIDCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
@@ -365,20 +365,20 @@ func TestGetUserPaymentsByID(t *testing.T) {
 		{
 			description: "repository server error",
 			mockedStore: &postgres.QuerierMock{
-				ListUserTransfersByIDFunc: func(ctx context.Context, arg postgres.ListUserTransfersByIDParams) ([]postgres.Transfer, error) {
-					return []postgres.Transfer{}, fmt.Errorf("server error")
+				ListUserPaymentsByIDFunc: func(ctx context.Context, arg postgres.ListUserPaymentsByIDParams) ([]postgres.Payment, error) {
+					return []postgres.Payment{}, fmt.Errorf("server error")
 				},
 			},
 			userID: "2",
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.ListUserTransfersByIDCalls())
+				calls := len(tr.ListUserPaymentsByIDCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
 				jsonErr := new(jsonError)
 				err := json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "can't find transfer", jsonErr.Details)
+				assert.Equal(t, "can't find payment", jsonErr.Details)
 				assert.Equal(t, "server error", jsonErr.Error)
 				assert.Equal(t, http.StatusInternalServerError, rec.Code)
 			},
@@ -387,7 +387,7 @@ func TestGetUserPaymentsByID(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.description, func(t *testing.T) {
-			api.transferStore = tc.mockedStore
+			api.paymentStore = tc.mockedStore
 
 			req = httptest.NewRequest("GET", "/user/{user_id}/payment", http.NoBody)
 			req.Header.Set("Content-Type", "application/json")
@@ -420,20 +420,20 @@ func TestGetUserPaymentsByIEmail(t *testing.T) {
 		{
 			description: "success",
 			mockedStore: &postgres.QuerierMock{
-				ListUserTransfersByEmailFunc: func(ctx context.Context, arg postgres.ListUserTransfersByEmailParams) ([]postgres.Transfer, error) {
-					return tTransfers, nil
+				ListUserPaymentsByEmailFunc: func(ctx context.Context, arg postgres.ListUserPaymentsByEmailParams) ([]postgres.Payment, error) {
+					return tPayments, nil
 				},
 			},
 			email: "test@example.com",
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.ListUserTransfersByEmailCalls())
+				calls := len(tr.ListUserPaymentsByEmailCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
-				result := make([]postgres.Transfer, 0)
+				result := make([]postgres.Payment, 0)
 				err := json.NewDecoder(rec.Body).Decode(&result)
 				require.NoError(t, err)
-				assert.ElementsMatch(t, tTransfers, result)
+				assert.ElementsMatch(t, tPayments, result)
 				assert.Equal(t, http.StatusOK, rec.Code)
 			},
 		},
@@ -454,13 +454,13 @@ func TestGetUserPaymentsByIEmail(t *testing.T) {
 		{
 			description: "not found",
 			mockedStore: &postgres.QuerierMock{
-				ListUserTransfersByEmailFunc: func(ctx context.Context, arg postgres.ListUserTransfersByEmailParams) ([]postgres.Transfer, error) {
-					return []postgres.Transfer{}, nil
+				ListUserPaymentsByEmailFunc: func(ctx context.Context, arg postgres.ListUserPaymentsByEmailParams) ([]postgres.Payment, error) {
+					return []postgres.Payment{}, nil
 				},
 			},
 			email: "test@example.com",
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.ListUserTransfersByEmailCalls())
+				calls := len(tr.ListUserPaymentsByEmailCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
@@ -475,20 +475,20 @@ func TestGetUserPaymentsByIEmail(t *testing.T) {
 		{
 			description: "repository server error",
 			mockedStore: &postgres.QuerierMock{
-				ListUserTransfersByEmailFunc: func(ctx context.Context, arg postgres.ListUserTransfersByEmailParams) ([]postgres.Transfer, error) {
-					return []postgres.Transfer{}, fmt.Errorf("server error")
+				ListUserPaymentsByEmailFunc: func(ctx context.Context, arg postgres.ListUserPaymentsByEmailParams) ([]postgres.Payment, error) {
+					return []postgres.Payment{}, fmt.Errorf("server error")
 				},
 			},
 			email: "test@example.com",
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.ListUserTransfersByEmailCalls())
+				calls := len(tr.ListUserPaymentsByEmailCalls())
 				assert.Equal(t, 1, calls)
 			},
 			checkResponse: func(rec *httptest.ResponseRecorder) {
 				jsonErr := new(jsonError)
 				err := json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "can't find transfer", jsonErr.Details)
+				assert.Equal(t, "can't find payment", jsonErr.Details)
 				assert.Equal(t, "server error", jsonErr.Error)
 				assert.Equal(t, http.StatusInternalServerError, rec.Code)
 			},
@@ -497,7 +497,7 @@ func TestGetUserPaymentsByIEmail(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.description, func(t *testing.T) {
-			api.transferStore = tc.mockedStore
+			api.paymentStore = tc.mockedStore
 
 			req = httptest.NewRequest("GET", "/user/payment", http.NoBody)
 			q := req.URL.Query()
@@ -535,10 +535,10 @@ func TestCancelPayment(t *testing.T) {
 		{
 			description: "success",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusNew, nil
 				},
-				DiscardTransferFunc: func(ctx context.Context, id int64) (int64, error) {
+				DiscardPaymentFunc: func(ctx context.Context, id int64) (int64, error) {
 					return 1, nil
 				},
 			},
@@ -548,9 +548,9 @@ func TestCancelPayment(t *testing.T) {
 				mock.ExpectCommit()
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
-				calls = len(tr.DiscardTransferCalls())
+				calls = len(tr.DiscardPaymentCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -597,7 +597,7 @@ func TestCancelPayment(t *testing.T) {
 		{
 			description: "not found",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return "", sql.ErrNoRows
 				},
 			},
@@ -607,7 +607,7 @@ func TestCancelPayment(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -624,7 +624,7 @@ func TestCancelPayment(t *testing.T) {
 		{
 			description: "get status server error",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return "", fmt.Errorf("server error")
 				},
 			},
@@ -634,7 +634,7 @@ func TestCancelPayment(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -643,7 +643,7 @@ func TestCancelPayment(t *testing.T) {
 				jsonErr := new(jsonError)
 				err = json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "can't update transfer", jsonErr.Details)
+				assert.Equal(t, "can't update payment", jsonErr.Details)
 				assert.Equal(t, "server error", jsonErr.Error)
 				assert.Equal(t, http.StatusInternalServerError, rec.Code)
 			},
@@ -651,10 +651,10 @@ func TestCancelPayment(t *testing.T) {
 		{
 			description: "discard payment server error",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusNew, nil
 				},
-				DiscardTransferFunc: func(ctx context.Context, id int64) (int64, error) {
+				DiscardPaymentFunc: func(ctx context.Context, id int64) (int64, error) {
 					return -1, fmt.Errorf("server error")
 				},
 			},
@@ -664,9 +664,9 @@ func TestCancelPayment(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
-				calls = len(tr.DiscardTransferCalls())
+				calls = len(tr.DiscardPaymentCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -675,7 +675,7 @@ func TestCancelPayment(t *testing.T) {
 				jsonErr := new(jsonError)
 				err = json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "can't delete transfer", jsonErr.Details)
+				assert.Equal(t, "can't delete payment", jsonErr.Details)
 				assert.Equal(t, "server error", jsonErr.Error)
 				assert.Equal(t, http.StatusInternalServerError, rec.Code)
 			},
@@ -683,10 +683,10 @@ func TestCancelPayment(t *testing.T) {
 		{
 			description: "terminal status",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusSuccess, nil
 				},
-				DiscardTransferFunc: func(ctx context.Context, id int64) (int64, error) {
+				DiscardPaymentFunc: func(ctx context.Context, id int64) (int64, error) {
 					return 0, nil
 				},
 			},
@@ -696,9 +696,9 @@ func TestCancelPayment(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
-				calls = len(tr.DiscardTransferCalls())
+				calls = len(tr.DiscardPaymentCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -715,10 +715,10 @@ func TestCancelPayment(t *testing.T) {
 		{
 			description: "commit transaction error",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusNew, nil
 				},
-				DiscardTransferFunc: func(ctx context.Context, id int64) (int64, error) {
+				DiscardPaymentFunc: func(ctx context.Context, id int64) (int64, error) {
 					return 1, nil
 				},
 			},
@@ -728,9 +728,9 @@ func TestCancelPayment(t *testing.T) {
 				mock.ExpectCommit().WillReturnError(fmt.Errorf("can't commit transaction"))
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
-				calls = len(tr.DiscardTransferCalls())
+				calls = len(tr.DiscardPaymentCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -748,7 +748,7 @@ func TestCancelPayment(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.description, func(t *testing.T) {
-			api.transferStore = tc.mockedStore
+			api.paymentStore = tc.mockedStore
 
 			req = httptest.NewRequest("DELETE", "/payment/{id}", http.NoBody)
 			req.Header.Set("Content-Type", "application/json")
@@ -792,10 +792,10 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			description: "success",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusNew, nil
 				},
-				UpdateTransferStatusFunc: func(ctx context.Context, arg postgres.UpdateTransferStatusParams) (int64, error) {
+				UpdatePaymentStatusFunc: func(ctx context.Context, arg postgres.UpdatePaymentStatusParams) (int64, error) {
 					return 1, nil
 				},
 			},
@@ -806,9 +806,9 @@ func TestUpdateStatus(t *testing.T) {
 				mock.ExpectCommit()
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
-				calls = len(tr.UpdateTransferStatusCalls())
+				calls = len(tr.UpdatePaymentStatusCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -844,7 +844,7 @@ func TestUpdateStatus(t *testing.T) {
 				jsonErr := new(jsonError)
 				err = json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "invalid request body, can't decode it to transfer", jsonErr.Details)
+				assert.Equal(t, "invalid request body, can't decode it to payment", jsonErr.Details)
 				assert.Equal(t, "invalid character 'b' looking for beginning of value", jsonErr.Error)
 				assert.Equal(t, http.StatusBadRequest, rec.Code)
 			},
@@ -873,7 +873,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			description: "not found",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return "", sql.ErrNoRows
 				},
 			},
@@ -884,7 +884,7 @@ func TestUpdateStatus(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -901,7 +901,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			description: "get status server error",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return "", fmt.Errorf("server error")
 				},
 			},
@@ -912,7 +912,7 @@ func TestUpdateStatus(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -921,7 +921,7 @@ func TestUpdateStatus(t *testing.T) {
 				jsonErr := new(jsonError)
 				err = json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "can't update transfer", jsonErr.Details)
+				assert.Equal(t, "can't update payment", jsonErr.Details)
 				assert.Equal(t, "server error", jsonErr.Error)
 				assert.Equal(t, http.StatusInternalServerError, rec.Code)
 			},
@@ -929,10 +929,10 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			description: "discard payment server error",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusNew, nil
 				},
-				UpdateTransferStatusFunc: func(ctx context.Context, arg postgres.UpdateTransferStatusParams) (int64, error) {
+				UpdatePaymentStatusFunc: func(ctx context.Context, arg postgres.UpdatePaymentStatusParams) (int64, error) {
 					return -1, fmt.Errorf("server error")
 				},
 			},
@@ -943,9 +943,9 @@ func TestUpdateStatus(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
-				calls = len(tr.UpdateTransferStatusCalls())
+				calls = len(tr.UpdatePaymentStatusCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -954,7 +954,7 @@ func TestUpdateStatus(t *testing.T) {
 				jsonErr := new(jsonError)
 				err = json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "can't update transfer", jsonErr.Details)
+				assert.Equal(t, "can't update payment", jsonErr.Details)
 				assert.Equal(t, "server error", jsonErr.Error)
 				assert.Equal(t, http.StatusInternalServerError, rec.Code)
 			},
@@ -962,10 +962,10 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			description: "terminal status",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusFailure, nil
 				},
-				UpdateTransferStatusFunc: func(ctx context.Context, arg postgres.UpdateTransferStatusParams) (int64, error) {
+				UpdatePaymentStatusFunc: func(ctx context.Context, arg postgres.UpdatePaymentStatusParams) (int64, error) {
 					return 0, nil
 				},
 			},
@@ -976,9 +976,9 @@ func TestUpdateStatus(t *testing.T) {
 				mock.ExpectRollback()
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
-				calls = len(tr.UpdateTransferStatusCalls())
+				calls = len(tr.UpdatePaymentStatusCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -995,10 +995,10 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			description: "commit transaction error",
 			mockedStore: &postgres.QuerierMock{
-				GetTransferStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
+				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusNew, nil
 				},
-				UpdateTransferStatusFunc: func(ctx context.Context, arg postgres.UpdateTransferStatusParams) (int64, error) {
+				UpdatePaymentStatusFunc: func(ctx context.Context, arg postgres.UpdatePaymentStatusParams) (int64, error) {
 					return 1, nil
 				},
 			},
@@ -1009,9 +1009,9 @@ func TestUpdateStatus(t *testing.T) {
 				mock.ExpectCommit().WillReturnError(fmt.Errorf("can't commit transaction"))
 			},
 			checkMockCalls: func(tr *postgres.QuerierMock) {
-				calls := len(tr.GetTransferStatusByIDCalls())
+				calls := len(tr.GetPaymentStatusByIDCalls())
 				assert.Equal(t, 1, calls)
-				calls = len(tr.UpdateTransferStatusCalls())
+				calls = len(tr.UpdatePaymentStatusCalls())
 				assert.Equal(t, 1, calls)
 				err = mock.ExpectationsWereMet()
 				assert.NoError(t, err)
@@ -1020,7 +1020,7 @@ func TestUpdateStatus(t *testing.T) {
 				jsonErr := new(jsonError)
 				err := json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "can't commit transaction", jsonErr.Details)
+				assert.Equal(t, "can't commit payment", jsonErr.Details)
 				assert.Equal(t, "can't commit transaction", jsonErr.Error)
 				assert.Equal(t, http.StatusInternalServerError, rec.Code)
 			},
@@ -1029,7 +1029,7 @@ func TestUpdateStatus(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.description, func(t *testing.T) {
-			api.transferStore = tc.mockedStore
+			api.paymentStore = tc.mockedStore
 
 			req = httptest.NewRequest("PUT", "/payment/{id}", tc.reqBody)
 			req.Header.Set("Content-Type", "application/json")
