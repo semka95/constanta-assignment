@@ -220,7 +220,7 @@ func (a *API) getUserPaymentsByEmail(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, ts)
 }
 
-// DELETE /payment/{id} - delete payment
+// DELETE /payment/{id} - deletes payment
 func (a *API) cancelPayment(w http.ResponseWriter, r *http.Request) {
 	paymentID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -251,7 +251,7 @@ func (a *API) cancelPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if rows == 0 {
-		SendErrorJSON(w, r, http.StatusBadRequest, fmt.Errorf("can't discard payment, it has %s status", status), "can't discard payment, it has terminal status")
+		SendErrorJSON(w, r, http.StatusBadRequest, fmt.Errorf("can't discard payment, it has %s status", status), "can't discard payment, it has final status")
 		return
 	}
 

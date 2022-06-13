@@ -681,7 +681,7 @@ func TestCancelPayment(t *testing.T) {
 			},
 		},
 		{
-			description: "terminal status",
+			description: "final status",
 			mockedStore: &postgres.QuerierMock{
 				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusSuccess, nil
@@ -707,7 +707,7 @@ func TestCancelPayment(t *testing.T) {
 				jsonErr := new(jsonError)
 				err = json.NewDecoder(rec.Body).Decode(jsonErr)
 				require.NoError(t, err)
-				assert.Equal(t, "can't discard payment, it has terminal status", jsonErr.Details)
+				assert.Equal(t, "can't discard payment, it has final status", jsonErr.Details)
 				assert.Equal(t, "can't discard payment, it has success status", jsonErr.Error)
 				assert.Equal(t, http.StatusBadRequest, rec.Code)
 			},
@@ -927,7 +927,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 		},
 		{
-			description: "discard payment server error",
+			description: "update payment server error",
 			mockedStore: &postgres.QuerierMock{
 				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusNew, nil
@@ -960,7 +960,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 		},
 		{
-			description: "terminal status",
+			description: "final status",
 			mockedStore: &postgres.QuerierMock{
 				GetPaymentStatusByIDFunc: func(ctx context.Context, id int64) (postgres.ValidStatus, error) {
 					return postgres.ValidStatusFailure, nil

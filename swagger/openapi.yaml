@@ -123,7 +123,7 @@ paths:
                   value:
                     error: invalid character 'b' looking for beginning of value
                     details: "invalid request body, can't decode it to payment"
-                payment in terminal status:
+                payment in final status:
                   value:
                     error: can't update from success status to failure status
                     details: can't update payment status
@@ -183,10 +183,10 @@ paths:
                   value:
                     error: invalid payment id
                     details: 'strconv.Atoi: parsing "bad id": invalid syntax'
-                payment in terminal status:
+                payment in final status:
                   value:
                     error: "can't discard payment, it has success status"
-                    details: "can't discard payment, it has terminal status"
+                    details: "can't discard payment, it has final status"
         "404":
           description: Not Found
           content:
